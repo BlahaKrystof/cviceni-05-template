@@ -124,6 +124,11 @@ class FilterSelector(FeatureSelector):
         # assert  Ověřte, že X je 2D pole (X.ndim == 2)
         # assert  Ověřte, že len(y) == X.shape[0]
         # assert  Ověřte, že y je binarni (mnozina hodnot je podmnozinou {0, 1})
+        assert x.ndim == 2 and isinstance(x, np.ndarray), "Vstup X musí být 2d pole typu np.ndarray"
+        assert len(y) == x.shape[0], "Vektor y musí bý stejného rozměru jako "
+        assert np.isin(y, [0, 1]).all(), "Vektor y musí být binární (0 nebo 1)"
+
+
         raise NotImplementedError(
             "Úkol: implementujte filtrovaci vyber priznaku dvojkriteriem "
             "vyznamnost (p < alpha) A velikost ucinku (|d| >= min_effect_size); "

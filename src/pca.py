@@ -81,10 +81,15 @@ class PCA:
         # assert  Overte, ze x je typu np.ndarray.
         # assert  Overte, ze x ma 2 rozmery (matice vzorky x priznaky).
         # assert  Overte, ze x obsahuje alespon 2 vzorky (m >= 2).
-        raise NotImplementedError(
-            "Úkol: spoctete kovariancni matici (n_features x n_features) "
-            "vektorizovane — vycentrujte sloupce a vratte (xc.T @ xc) / (m - 1)."
-        )
+        assert isinstance(x, np.ndarray) and x.ndim == 2, "Matice x musí být typu ndarray a musí být 2D"
+        assert x.shape[0] >= 2, "Matice x musí obsahovat alespoň 2 vzorky"
+
+        x_centered = x - x.mean(axis=0)
+
+        x_cov = (x_centered.T @ x_centered)/ (x.shape[0] - 1)
+
+        return x_cov
+
 
     def _select_components(self, eigenvalues: np.ndarray) -> int:
         """Urci pocet komponent podle prahu kumulativniho rozptylu.
@@ -109,10 +114,22 @@ class PCA:
         # assert  Overte, ze eigenvalues je 1D np.ndarray.
         # assert  Overte, ze eigenvalues jsou serazena sestupne.
         # assert  Overte, ze 0 < self.variance_threshold <= 100.
-        raise NotImplementedError(
-            "Úkol: vratte nejmensi pocet komponent, jejichz kumulativni "
-            "vysvetleny rozptyl dosahne self.variance_threshold procent."
-        )
+        assert isinstance(eigenvalues, np.ndarray) and eigenvalues.ndim == 1, "Pole eigenvalues musí být typu ndarray a musí být 1D (vektor)"
+        assert np.all(np.diff(eigenvalues) <= 0), "Eigenvalues musí být seřazena sestupně"
+        assert 100 >= self.variance_threshold > 0, "variance_threshold musí být mezi 0 a 100"
+
+        ratio = eigenvalues / eigenvalues.sum()
+
+        cumulative = np.cumsum(ratio) * 100
+
+        idx = np.argmax(cumulative >= self.variance_threshold)
+        return idx
+
+        # #nebo pres cyklus misto vektoroveho reseni
+        # for idx, value in enumerate(cumulative):
+        #     if value >= self.variance_threshold:
+        #         return idx+1
+
 
     def fit(self, x: np.ndarray) -> "PCA":
         """Nauci PCA model z trenovacich dat ``x``.
@@ -126,7 +143,7 @@ class PCA:
             ``n_components_`` a ``components_``.
 
         Postup: ulozi prumer, sestavi kovariancni matici, provede jeji vlastni
-        dekompozici (``np.linalg.eigh``), sesradi vysledky SESTUPNE podle
+        dekompozici (``np.linalg.eigh``), seradi vysledky SESTUPNE podle
         vlastnich cisel, urci pocet komponent a ulozi prislusne vlastni vektory
         jako sloupce ``components_``.
         """
@@ -188,6 +205,12 @@ class PCA:
         """
         # assert  Overte, ze model je naucen (self.components_ neni None).
         # assert  Overte, ze X.shape[1] == self.mean_.shape[0].
+
+        assert self.components_ is not None, " Model musí být naučen"
+        assert  x.shape[1] == self.mean_.shape[0], "x musi mit stejny pocet priznaku jako trenovaci data"
+
+
+
         raise NotImplementedError(
             "Úkol: promitnete vycentrovana data na self.components_, "
             "tedy vratte (X - self.mean_) @ self.components_."

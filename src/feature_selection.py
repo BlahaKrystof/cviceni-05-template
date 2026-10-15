@@ -11,6 +11,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 import numpy as np
+from scipy import stats
 
 # Knihovni nastroje jsou zde pouzity zamerne a v omezene mire: k-means, kNN
 # a silueta jsou periferie (siluetu jsme implementovali v cv3), tezistem cv5
@@ -125,8 +126,29 @@ class FilterSelector(FeatureSelector):
         # assert  Ověřte, že len(y) == X.shape[0]
         # assert  Ověřte, že y je binarni (mnozina hodnot je podmnozinou {0, 1})
         assert x.ndim == 2 and isinstance(x, np.ndarray), "Vstup X musí být 2d pole typu np.ndarray"
-        assert len(y) == x.shape[0], "Vektor y musí bý stejného rozměru jako "
+        assert len(y) == x.shape[0], "Vektor y musí bý stejného rozměru jako počet vzotků v matici x"
         assert np.isin(y, [0, 1]).all(), "Vektor y musí být binární (0 nebo 1)"
+
+        output = []
+
+        for idx, column in enumerate(x.T):
+            a = column[y == 0]
+            b = column[y == 1]
+
+            stat_a, p_a = stats.shapiro(a)
+            stat_b, p_b = stats.shapiro(b)
+
+            if p_a > self.alpha and p_b > self.alpha:
+                p = stats.ttest_ind(a, b).pvalue
+            else:
+                p = stats.mannwhitneyu(a, b).pvalue
+
+            d = self._cohens_d(a, b)
+
+            if p < self.alpha and abs(d) >= self.min_effect_size:
+                output.append(idx)
+
+        return np.ndarray(output, dtype=int)
 
 
         raise NotImplementedError(

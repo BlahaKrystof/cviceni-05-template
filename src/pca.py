@@ -10,7 +10,7 @@ a pozdeji znovu pouzit.
 from __future__ import annotations
 
 import numpy as np
-
+import os
 
 class PCA:
     """Induktivni PCA ve stylu sklearn (nededi z niceho).
@@ -209,12 +209,9 @@ class PCA:
         assert self.components_ is not None, " Model musí být naučen"
         assert  x.shape[1] == self.mean_.shape[0], "x musi mit stejny pocet priznaku jako trenovaci data"
 
+        return (x - self.mean_) @ self.components_
 
 
-        raise NotImplementedError(
-            "Úkol: promitnete vycentrovana data na self.components_, "
-            "tedy vratte (X - self.mean_) @ self.components_."
-        )
 
     def inverse_transform(self, x_pca: np.ndarray) -> np.ndarray:
         """Rekonstruuje data z prostoru hlavnich komponent zpet do puvodniho.
@@ -234,10 +231,12 @@ class PCA:
         """
         # assert  Overte, ze model je naucen (self.components_ neni None).
         # assert  Overte, ze X_pca.shape[1] == self.n_components_.
-        raise NotImplementedError(
-            "Úkol: rekonstruujte data zpet do puvodniho prostoru, "
-            "tedy vratte X_pca @ self.components_.T + self.mean_."
-        )
+        assert self.components_ is not None, "Model musí být naučen (funkce fit musí být zavolána)"
+        assert x_pca.shape[1] == self.n_components_, "matice x_pca musí mít shodný počet komponent s trénovacími daty"
+
+        return x_pca @ self.components_.T + self.mean_
+
+
 
     def save(self, path: str) -> None:
         """Ulozi naucený model do souboru ``.npz`` pomoci ``np.savez``.
@@ -264,10 +263,18 @@ class PCA:
         Format ``.npz`` uklada jen ciselna pole.
         """
         # assert  Overte, ze model je naucen (self.components_ neni None).
-        raise NotImplementedError(
-            "Úkol: ulozte naucena pole modelu do souboru .npz pomoci np.savez "
-            "(minimalne components_ a mean_, plus dalsi pole pro obnovu stavu)."
+        assert self.components_ is not None, "Model musí být naučen (funkce fit musí být volána)"
+
+        np.savez(
+            path,
+            components_=self.components_,
+            mean_=self.mean_,
+            eigenvalues_=self.eigenvalues_,
+            explained_variance_ratio_=self.explained_variance_ratio_,
+            n_components_=np.array(self.n_components_),
         )
+
+
 
     # @classmethod: metoda dostane misto instance (self) samotnou tridu (cls).
     # Diky tomu ji lze volat primo na tride bez existujici instance
@@ -295,7 +302,19 @@ class PCA:
         """
         # assert  Overte, ze soubor path existuje a obsahuje pole 'components_' a 'mean_'.
         # assert  Overte, ze obnovene components_ maji 2 rozmery.
-        raise NotImplementedError(
-            "Úkol: nactete pole ze souboru .npz, vytvorte novou instanci PCA, "
-            "obnovte jeji naucene atributy a vratte ji."
-        )
+
+        assert os.path.isfile(path), f"Soubor {path} neexistuje"
+
+        data = np.load(path)
+        assert "components_" in data.files and "mean_" in data.files, "Soubor musí obsahovat pole 'components_' a 'mean_'"
+
+        obj = cls()
+
+        obj.components_ = data["components_"]
+        obj.mean_ = data["mean_"]
+        obj.eigenvalues_ = data["eigenvalues_"]
+        obj.explained_variance_ratio_ = data["explained_variance_ratio_"]
+        obj.n_components_ = int(data["n_components_"])
+
+        return obj
+

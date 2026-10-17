@@ -325,11 +325,15 @@ class SilhouetteWrapperSelector(WrapperSelector):
         """
         # assert  Ověřte, že X_subset je 2D pole (X_subset.ndim == 2)
         # assert  Ověřte, že X_subset.shape[0] > self.n_clusters
-        raise NotImplementedError(
-            "Úkol: implementujte siluetove skore — nafitujte KMeans na "
-            "X_subset a vratte silhouette_score(X_subset, labels); "
-            "viz docstring."
-        )
+        assert x_subset.ndim == 2, "matice x_subset musí být 2D pole"
+        assert x_subset.shape[0] > self.n_clusters, "matice x_subset musí mít více vzorků než počet shluků"
+
+        labels = x_subset.sklearn.cluster.KMeans(n_clusters=self.n_clusters,
+           random_state=self.random_state, n_init=10)
+
+        score = silhouette_score(x_subset, labels)
+
+        return score
 
 
 class KNNWrapperSelector(WrapperSelector):
@@ -396,8 +400,18 @@ class KNNWrapperSelector(WrapperSelector):
         # assert  Ověřte, že X_subset je 2D pole (X_subset.ndim == 2)
         # assert  Ověřte, že len(y) == X_subset.shape[0]
         # assert  Ověřte, že y obsahuje aspon 2 tridy
-        raise NotImplementedError(
-            "Úkol: implementujte skore jako testovaci presnost kNN — "
-            "train_test_split, fit KNeighborsClassifier, vratte clf.score; "
-            "viz docstring."
-        )
+        assert x_subset.ndim == 2, "matice x_subset musí být 2D pole"
+        assert len(y) == x_subset.shape[0], "binární vektor y musí být stejně dlouhý jako počet vzorků v matici x_subset"
+        assert len(np.unique(y)) >= 2, "vektor y musí mít alespoň 2 třídy (0 a 1)"
+
+        x_tr, x_te, y_tr, y_te = train_test_split(
+            x_subset, y, test_size=self.test_size,
+            random_state=self.random_state, stratify=y)
+
+        clf = KNeighborsClassifier(n_neighbors=self.n_neighbors)
+        clf.fit(x_tr, y_tr)
+
+        return clf.score(x_te, y_te)
+
+
+

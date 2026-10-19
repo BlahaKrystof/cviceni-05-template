@@ -122,8 +122,8 @@ class PCA:
 
         cumulative = np.cumsum(ratio) * 100
 
-        idx = np.argmax(cumulative >= self.variance_threshold)
-        return idx
+        idx = np.argmax(cumulative >= self.variance_threshold - 1e-9)
+        return int(idx + 1)
 
         # #nebo pres cyklus misto vektoroveho reseni
         # for idx, value in enumerate(cumulative):
@@ -307,6 +307,7 @@ class PCA:
 
         data = np.load(path)
         assert "components_" in data.files and "mean_" in data.files, "Soubor musí obsahovat pole 'components_' a 'mean_'"
+        assert data["components_"].ndim == 2, "components_ musí mít 2 rozměry"
 
         obj = cls()
 
